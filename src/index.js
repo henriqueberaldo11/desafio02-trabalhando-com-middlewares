@@ -10,19 +10,66 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const user = users.find( user => user.username === username)
+
+  if(!user) {
+    return response.status(404)
+  }
+
+  request.user = user
+
+  next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request
+
+  if (!user.pro && user.todos.length === 10) {
+    return response.status(403)
+  }
+  
+  next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const { id } = request.params
+
+  const user = users.find( user => user.username === username)  
+
+  if(!user) {
+    return response.status(404)
+  }
+
+  if (!validate(id)) {
+    return response.status(400)
+  }
+
+  const todo = user.todos.find( todo => todo.id === id)
+  if(!todo) {
+    return response.status(404).json({ error: 'Todo not found for deleted!'});    
+  }  
+  
+  request.user = user
+  request.todo = todo
+
+  next()  
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params
+
+  const user = users.find( user => user.id === id)  
+
+  if(!user) {
+    return response.status(404)
+  }
+
+  request.user = user
+
+  next()
+
 }
 
 app.post('/users', (request, response) => {
@@ -89,8 +136,8 @@ app.post('/todos', checksExistsUserAccount, checksCreateTodosUserAvailability, (
 });
 
 app.put('/todos/:id', checksTodoExists, (request, response) => {
-  const { title, deadline } = request.body;
   const { todo } = request;
+  const { title, deadline } = request.body;
 
   todo.title = title;
   todo.deadline = new Date(deadline);
